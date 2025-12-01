@@ -94,7 +94,7 @@
         <div class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-500">
             <div class="text-xs">
                 <div>
-                    <span id="versionLabel">版本</span>: <span id="versionNumber">1.3.3</span>
+                    <span id="versionLabel">版本</span>: <span id="versionNumber">1.4.0</span>
                 </div>
                 <div>
                     <span id="authorLabel">编者</span>: 荆炎荣
@@ -110,7 +110,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             
             let currentLang = 'zh';
-            const version = '1.3.3'; // 版本升级
+            const version = '1.4.0'; 
 
             // --- 1. 翻译文本 ---
             const translations = {
@@ -123,7 +123,8 @@
                     constantValue: '常数值：', 
                     langToggle: 'English',
                     version: '版本',
-                    author: '编者' 
+                    author: '编者',
+                    unitNone: '无单位'
                 },
                 en: {
                     title: 'Engineering Unit Converter',
@@ -134,12 +135,27 @@
                     constantValue: 'Constant Value:', 
                     langToggle: '中文',
                     version: 'Version',
-                    author: 'Editor' 
+                    author: 'Editor',
+                    unitNone: 'Dimensionless'
                 }
             };
 
             // --- 2. 单位定义 (支持中英文) ---
             const units = {
+                // === 新增/修改：RO水/水质 ===
+                water_quality: {
+                    name: { zh: '水质 (电导/电阻/TDS)', en: 'Water Quality (Cond/Res/TDS)' },
+                    // 特殊逻辑：不使用 standard factor，而是自定义函数处理倒数关系
+                    list: {
+                        'us_cm': { name: { zh: '微西门子/cm (μS/cm)', en: 'Microsiemens/cm (μS/cm)' }, type: 'cond', factor: 1 },
+                        'ms_cm': { name: { zh: '毫西门子/cm (mS/cm)', en: 'Millisiemens/cm (mS/cm)' }, type: 'cond', factor: 1000 },
+                        's_m': { name: { zh: '西门子/米 (S/m)', en: 'Siemens/meter (S/m)' }, type: 'cond', factor: 10000 },
+                        'tds_ppm': { name: { zh: 'TDS (ppm, 估算值)', en: 'TDS (ppm, approx)' }, type: 'cond', factor: 0.5 }, // 假设 0.5 转换系数 (1 μS/cm = 0.5 ppm)
+                        'meg_ohm': { name: { zh: '兆欧·厘米 (MΩ·cm)', en: 'Megaohm-cm (MΩ·cm)' }, type: 'res', factor: 1 }, // 基准电阻率单位
+                        'k_ohm': { name: { zh: '千欧·厘米 (kΩ·cm)', en: 'Kiloohm-cm (kΩ·cm)' }, type: 'res', factor: 0.001 },
+                        'ohm_cm': { name: { zh: '欧姆·厘米 (Ω·cm)', en: 'Ohm-cm (Ω·cm)' }, type: 'res', factor: 0.000001 }
+                    }
+                },
                 temperature: {
                     name: { zh: '温度', en: 'Temperature' },
                     baseUnit: 'celsius',
@@ -298,9 +314,9 @@
                         meter: { name: { zh: '米 (m)', en: 'Meter (m)' }, factor: 1 },
                         centimeter: { name: { zh: '厘米 (cm)', en: 'Centimeter (cm)' }, factor: 0.01 },
                         millimeter: { name: { zh: '毫米 (mm)', en: 'Millimeter (mm)' }, factor: 0.001 },
-                        si: { name: { zh: '丝 (sī, 0.01mm)', en: 'Si (0.01mm)' }, factor: 1e-5 }, // 新增
-                        micrometer: { name: { zh: '微米 (μm)', en: 'Micrometer (μm)' }, factor: 1e-6 }, // 新增
-                        nanometer: { name: { zh: '纳米 (nm)', en: 'Nanometer (nm)' }, factor: 1e-9 }, // 新增
+                        si: { name: { zh: '丝 (sī, 0.01mm)', en: 'Si (0.01mm)' }, factor: 1e-5 }, 
+                        micrometer: { name: { zh: '微米 (μm)', en: 'Micrometer (μm)' }, factor: 1e-6 }, 
+                        nanometer: { name: { zh: '纳米 (nm)', en: 'Nanometer (nm)' }, factor: 1e-9 }, 
                         mile: { name: { zh: '英里 (mi)', en: 'Mile (mi)' }, factor: 1609.344 },
                         nautical_mile: { name: { zh: '海里 (nmi)', en: 'Nautical Mile (nmi)' }, factor: 1852 },
                         yard: { name: { zh: '码 (yd)', en: 'Yard (yd)' }, factor: 0.9144 },
@@ -347,17 +363,18 @@
                 },
                 constants: {
                     name: { zh: '常用常数', en: 'Common Constants' },
-                    isConstant: true, // 特殊标记
+                    isConstant: true, 
+                    // 增加 unit 字段
                     list: {
-                        pi: { name: { zh: '圆周率 (π)', en: 'Pi (π)' }, value: Math.PI },
-                        e: { name: { zh: '自然常数 (e)', en: 'Euler\'s Number (e)' }, value: Math.E },
-                        g_const: { name: { zh: '标准重力 (g)', en: 'Standard Gravity (g)' }, value: 9.80665 },
-                        c_light: { name: { zh: '光速 (c)', en: 'Speed of Light (c)' }, value: 299792458 },
-                        h_planck: { name: { zh: '普朗克常数 (h)', en: 'Planck Constant (h)' }, value: 6.62607015e-34 },
-                        k_boltzmann: { name: { zh: '玻尔兹曼常数 (k)', en: 'Boltzmann Constant (k)' }, value: 1.380649e-23 },
-                        n_avogadro: { name: { zh: '阿伏伽德罗常数 (N_A)', en: 'Avogadro Constant (N_A)' }, value: 6.02214076e23 },
-                        g_grav: { name: { zh: '万有引力常数 (G)', en: 'Gravitational Constant (G)' }, value: 6.67430e-11 },
-                        r_gas: { name: { zh: '摩尔气体常数 (R)', en: 'Molar Gas Constant (R)' }, value: 8.314462618 }
+                        pi: { name: { zh: '圆周率 (π)', en: 'Pi (π)' }, value: Math.PI, unit: { zh: null, en: null } },
+                        e: { name: { zh: '自然常数 (e)', en: 'Euler\'s Number (e)' }, value: Math.E, unit: { zh: null, en: null } },
+                        g_const: { name: { zh: '标准重力 (g)', en: 'Standard Gravity (g)' }, value: 9.80665, unit: { zh: 'm/s²', en: 'm/s²' } },
+                        c_light: { name: { zh: '光速 (c)', en: 'Speed of Light (c)' }, value: 299792458, unit: { zh: 'm/s', en: 'm/s' } },
+                        h_planck: { name: { zh: '普朗克常数 (h)', en: 'Planck Constant (h)' }, value: 6.62607015e-34, unit: { zh: 'J·s', en: 'J·s' } },
+                        k_boltzmann: { name: { zh: '玻尔兹曼常数 (k)', en: 'Boltzmann Constant (k)' }, value: 1.380649e-23, unit: { zh: 'J/K', en: 'J/K' } },
+                        n_avogadro: { name: { zh: '阿伏伽德罗常数 (N_A)', en: 'Avogadro Constant (N_A)' }, value: 6.02214076e23, unit: { zh: 'mol⁻¹', en: 'mol⁻¹' } },
+                        g_grav: { name: { zh: '万有引力常数 (G)', en: 'Gravitational Constant (G)' }, value: 6.67430e-11, unit: { zh: 'm³/(kg·s²)', en: 'm³/(kg·s²)' } },
+                        r_gas: { name: { zh: '摩尔气体常数 (R)', en: 'Molar Gas Constant (R)' }, value: 8.314462618, unit: { zh: 'J/(mol·K)', en: 'J/(mol·K)' } }
                     }
                 },
             };
@@ -386,9 +403,9 @@
              */
             function populateCategories() {
                 categorySelect.innerHTML = '';
-                // 按制冷行业常用 -> 其他的顺序排序
+                // 排序顺序，把水质和制冷放在前面
                 const categoryOrder = [
-                    'pressure', 'power', 'energy', 'volumetric_flow', 'mass_flow', 
+                    'water_quality', 'pressure', 'power', 'energy', 'volumetric_flow', 'mass_flow', 
                     'density', 'specific_heat', 'thermal_conductivity', 'dynamic_viscosity', 'kinematic_viscosity', 
                     'speed', 'acceleration', 
                     'temperature', 'length', 'mass', 'area', 'volume',
@@ -399,17 +416,7 @@
                     if (units[key]) {
                         const option = document.createElement('option');
                         option.value = key;
-                        option.textContent = units[key].name[currentLang]; // 使用当前语言
-                        categorySelect.appendChild(option);
-                    }
-                });
-
-                // 添加其他未在排序列表中的类别
-                Object.keys(units).forEach(key => {
-                    if (!categoryOrder.includes(key)) {
-                        const option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = units[key].name[currentLang]; // 使用当前语言
+                        option.textContent = units[key].name[currentLang];
                         categorySelect.appendChild(option);
                     }
                 });
@@ -420,7 +427,7 @@
              */
             function updateUnitDropdowns() {
                 const categoryKey = categorySelect.value;
-                if (!categoryKey || !units[categoryKey]) return; // 增加保护
+                if (!categoryKey || !units[categoryKey]) return;
                 
                 const category = units[categoryKey];
                 const unitList = category.list;
@@ -453,7 +460,6 @@
                     // --- 单位换算模式 ---
                     inputValue.style.display = 'block';
                     toUnitSelect.style.display = 'block';
-                    // swapButton 是 flex 布局
                     swapButton.style.display = 'flex'; 
                     
                     inputLabel.textContent = translations[currentLang].input;
@@ -461,7 +467,7 @@
 
                     // 填充新选项
                     Object.keys(unitList).forEach(key => {
-                        const name = unitList[key].name[currentLang]; // 使用当前语言
+                        const name = unitList[key].name[currentLang];
                         
                         const fromOption = document.createElement('option');
                         fromOption.value = key;
@@ -474,21 +480,18 @@
                         toUnitSelect.appendChild(toOption);
                     });
 
-                    // 设置默认选项
+                    // 智能默认选项设置
                     const options = Array.from(fromUnitSelect.options).map(o => o.value);
-
-                    if (categoryKey === 'pressure' && options.includes('psi') && options.includes('bar')) {
+                    if (categoryKey === 'water_quality' && options.includes('us_cm') && options.includes('meg_ohm')) {
+                        // RO水默认：电导率 -> 电阻率
+                        fromUnitSelect.value = 'us_cm';
+                        toUnitSelect.value = 'meg_ohm';
+                    } else if (categoryKey === 'pressure' && options.includes('psi') && options.includes('bar')) {
                         fromUnitSelect.value = 'psi';
                         toUnitSelect.value = 'bar';
                     } else if (categoryKey === 'power' && options.includes('ton_refrigeration') && options.includes('kilowatt')) {
                         fromUnitSelect.value = 'ton_refrigeration';
                         toUnitSelect.value = 'kilowatt';
-                    } else if (categoryKey === 'energy' && options.includes('kcal') && options.includes('kwh')) {
-                        fromUnitSelect.value = 'kcal';
-                        toUnitSelect.value = 'kwh';
-                    } else if (categoryKey === 'volumetric_flow' && options.includes('cfm') && options.includes('m3_hr')) {
-                        fromUnitSelect.value = 'cfm';
-                        toUnitSelect.value = 'm3_hr';
                     } else if (options.length > 1) {
                         fromUnitSelect.selectedIndex = 0;
                         toUnitSelect.selectedIndex = 1;
@@ -497,13 +500,12 @@
                         toUnitSelect.selectedIndex = 0;
                     }
                     
-                    // 更新后立即执行一次换算
                     convert();
                 }
             }
 
             /**
-             * (新增) 显示常数值
+             * 显示常数值 (带单位)
              */
             function showConstantValue() {
                 const categoryKey = categorySelect.value;
@@ -514,8 +516,14 @@
                     return;
                 }
                 
-                const value = units[categoryKey].list[constantKey].value;
-                resultValue.textContent = formatNumber(value);
+                const item = units[categoryKey].list[constantKey];
+                const value = item.value;
+                const unitStr = item.unit[currentLang] || (item.unit.zh ? item.unit.zh : translations[currentLang].unitNone);
+
+                // 如果 unit 为 null (例如 Pi)，显示 '无单位' 或空
+                const displayUnit = item.unit[currentLang] ? ` ${item.unit[currentLang]}` : ` (${translations[currentLang].unitNone})`;
+
+                resultValue.textContent = formatNumber(value) + displayUnit;
             }
 
             /**
@@ -527,9 +535,8 @@
                 const fromUnitKey = fromUnitSelect.value;
                 const toUnitKey = toUnitSelect.value;
 
-                // 如果是常数类别，则不执行
                 if (units[categoryKey] && units[categoryKey].isConstant) {
-                    showConstantValue(); // 确保常数值正确显示
+                    showConstantValue();
                     return;
                 }
 
@@ -540,87 +547,114 @@
 
                 let result;
 
-                // 特殊处理：温度
+                // === 1. 温度换算 ===
                 if (categoryKey === 'temperature') {
                     result = convertTemperature(value, fromUnitKey, toUnitKey);
                 } 
-                // 标准换算：通过基础单位
+                // === 2. 水质换算 (电导/电阻) ===
+                else if (categoryKey === 'water_quality') {
+                    result = convertWaterQuality(value, fromUnitKey, toUnitKey);
+                }
+                // === 3. 标准线性换算 ===
                 else {
                     const category = units[categoryKey];
                     const fromFactor = category.list[fromUnitKey].factor;
                     const toFactor = category.list[toUnitKey].factor;
                     
-                    // 1. 转换到基础单位
                     const valueInBase = value * fromFactor;
-                    // 2. 从基础单位转换到目标单位
                     result = valueInBase / toFactor;
                 }
 
-                // 格式化输出，保留合理的小数位数
                 resultValue.textContent = formatNumber(result);
             }
 
             /**
-             * 温度换算（特殊逻辑）
+             * 水质换算逻辑
+             * 基础逻辑：统一转为 μS/cm (cond) 进行中间计算
+             * 电阻率 (Res) = 1,000,000 / 电导率 (Cond, μS/cm)
              */
-            function convertTemperature(value, from, to) {
-                if (from === to) return value;
-
-                let celsiusValue;
-
-                // 1. 全部转换到摄氏度 (Celsius)
-                switch (from) {
-                    case 'celsius':
-                        celsiusValue = value;
-                        break;
-                    case 'fahrenheit':
-                        celsiusValue = (value - 32) * 5 / 9;
-                        break;
-                    case 'kelvin':
-                        celsiusValue = value - 273.15;
-                        break;
+            function convertWaterQuality(value, fromKey, toKey) {
+                if (value === 0 && units.water_quality.list[fromKey].type === 'res') {
+                    return 0; // 避免除以零，虽然物理上0电阻率意味着无限电导率
                 }
 
-                // 2. 从摄氏度转换到目标单位
-                switch (to) {
-                    case 'celsius':
-                        return celsiusValue;
-                    case 'fahrenheit':
-                        return (celsiusValue * 9 / 5) + 32;
-                    case 'kelvin':
-                        return celsiusValue + 273.15;
+                const list = units.water_quality.list;
+                const fromData = list[fromKey];
+                const toData = list[toKey];
+
+                let valInMicroSiemens = 0;
+
+                // Step 1: 转为 μS/cm
+                if (fromData.type === 'cond') {
+                    // 线性转换: Value * Factor
+                    // 比如: mS/cm (factor 1000) -> 2 * 1000 = 2000 μS/cm
+                    valInMicroSiemens = value * fromData.factor;
+                } else {
+                    // 倒数转换: Value 是电阻率
+                    // MΩ·cm (factor 1). 18.2 MΩ·cm -> 1,000,000 / (18.2 * 1) = 54945... wait.
+                    // 公式: μS/cm = 1,000,000 / (MΩ·cm)
+                    // 如果单位是 kΩ·cm (factor 0.001 MΩ). 
+                    // 简单化：先转成 MΩ·cm
+                    const valInMegaOhm = value * fromData.factor; 
+                    if (valInMegaOhm === 0) return 0;
+                    valInMicroSiemens = 1 / valInMegaOhm;
+                }
+
+                // Step 2: 从 μS/cm 转为 目标单位
+                if (toData.type === 'cond') {
+                    // 线性转换回去
+                    return valInMicroSiemens / toData.factor;
+                } else {
+                    // 转为电阻率
+                    if (valInMicroSiemens === 0) return 0; // 防止无穷大
+                    const resInMegaOhm = 1 / valInMicroSiemens;
+                    return resInMegaOhm / toData.factor;
                 }
             }
 
-Storage
             /**
-             * 格式化数字显示，避免过多小数
+             * 温度换算
+             */
+            function convertTemperature(value, from, to) {
+                if (from === to) return value;
+                let celsiusValue;
+                // 转 Celsius
+                switch (from) {
+                    case 'celsius': celsiusValue = value; break;
+                    case 'fahrenheit': celsiusValue = (value - 32) * 5 / 9; break;
+                    case 'kelvin': celsiusValue = value - 273.15; break;
+                }
+                // 转 目标
+                switch (to) {
+                    case 'celsius': return celsiusValue;
+                    case 'fahrenheit': return (celsiusValue * 9 / 5) + 32;
+                    case 'kelvin': return celsiusValue + 273.15;
+                }
+            }
+
+            /**
+             * 格式化数字显示
              */
             function formatNumber(num) {
                 if (num === 0) return 0;
+                if (!isFinite(num)) return "∞";
                 
-                // 使用科学计数法处理极大或极小的数
                 if (Math.abs(num) > 1e10 || (Math.abs(num) < 1e-6 && Math.abs(num) > 0)) {
                     return num.toExponential(6);
                 }
                 
-                // 对于普通数字，保留最多15位有效数字 (常数需要更高精度)
-                let formatted = num.toPrecision(15);
-                
-                // 去除末尾不必要的0和小数点
+                let formatted = num.toPrecision(12);
                 if (formatted.includes('.')) {
                     formatted = formatted.replace(/0+$/, '').replace(/\.$/, '');
                 }
-                
                 return formatted;
             }
 
             /**
-             * 交换 "从" 和 "至" 的单位
+             * 交换单位
              */
             function swapUnits() {
                 const categoryKey = categorySelect.value;
-                // 常数类别下不执行交换
                 if (units[categoryKey] && units[categoryKey].isConstant) return;
 
                 const fromValue = fromUnitSelect.value;
@@ -629,7 +663,6 @@ Storage
                 fromUnitSelect.value = toValue;
                 toUnitSelect.value = fromValue;
                 
-                // 交换后立即重新计算
                 convert();
             }
 
@@ -640,31 +673,25 @@ Storage
                 currentLang = lang;
                 document.documentElement.lang = lang;
                 
-                // 1. 更新静态文本
                 const t = translations[lang];
                 mainTitle.textContent = t.title;
                 categoryLabel.textContent = t.category;
-                // inputLabel 和 resultLabel 将在 updateUnitDropdowns 中设置
                 versionLabel.textContent = t.version;
                 authorLabel.textContent = t.author; 
                 versionNumber.textContent = version;
                 langToggleButton.textContent = t.langToggle;
                 
-                // 2. 保存当前下拉框选项
                 const oldCategory = categorySelect.value;
                 const oldFrom = fromUnitSelect.value;
                 const oldTo = toUnitSelect.value;
 
-                // 3. 重新填充下拉框
                 populateCategories();
-                // 恢复选择（如果类别仍然存在）
                 if (Array.from(categorySelect.options).some(o => o.value === oldCategory)) {
                     categorySelect.value = oldCategory;
                 }
 
-                updateUnitDropdowns(); // <-- 此函数会根据类别设置正确的标签和模式
+                updateUnitDropdowns();
 
-                // 恢复选择（如果单位仍然存在）
                 if (Array.from(fromUnitSelect.options).some(o => o.value === oldFrom)) {
                     fromUnitSelect.value = oldFrom;
                 }
@@ -672,7 +699,6 @@ Storage
                     toUnitSelect.value = oldTo;
                 }
                 
-                // 4. 确保换算同步 (在恢复选项后)
                 const category = units[categorySelect.value];
                 if (category && category.isConstant) {
                     showConstantValue();
@@ -682,21 +708,16 @@ Storage
             }
 
             // --- 5. 绑定事件监听器 ---
-            
-            // 切换语言
             langToggleButton.addEventListener('click', () => {
                 const newLang = currentLang === 'zh' ? 'en' : 'zh';
                 updateLanguage(newLang);
             });
 
-            // 交换单位
             swapButton.addEventListener('click', swapUnits); 
 
-            // 换算逻辑
             categorySelect.addEventListener('change', updateUnitDropdowns);
             inputValue.addEventListener('input', convert);
             
-            // fromUnitSelect 现在需要根据模式调用不同函数
             fromUnitSelect.addEventListener('change', () => {
                 const categoryKey = categorySelect.value;
                 if (units[categoryKey] && units[categoryKey].isConstant) {
@@ -709,18 +730,24 @@ Storage
             toUnitSelect.addEventListener('change', convert);
 
             // --- 6. 初始化 ---
-            updateLanguage(currentLang); // 初始加载
-            inputValue.value = 1; // 默认输入1，方便查看
+            updateLanguage(currentLang);
+            inputValue.value = 1; 
             
-            // 初始加载时，根据类别决定调用 convert 还是 showConstantValue
-            const initialCategory = units[categorySelect.value];
-            if (initialCategory && initialCategory.isConstant) {
-                showConstantValue();
-            } else {
+            // 如果默认是水质，显示一个典型的电阻率
+            if (categorySelect.value === 'water_quality') {
+                inputValue.value = 18.2; 
+                fromUnitSelect.value = 'meg_ohm';
+                toUnitSelect.value = 'us_cm';
                 convert();
+            } else {
+                 const initialCategory = units[categorySelect.value];
+                if (initialCategory && initialCategory.isConstant) {
+                    showConstantValue();
+                } else {
+                    convert();
+                }
             }
         });
     </script>
 </body>
 </html>
-
