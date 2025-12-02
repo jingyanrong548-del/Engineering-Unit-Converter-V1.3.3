@@ -94,7 +94,7 @@
         <div class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-500">
             <div class="text-xs">
                 <div>
-                    <span id="versionLabel">版本</span>: <span id="versionNumber">1.4.0</span>
+                    <span id="versionLabel">版本</span>: <span id="versionNumber">1.5.0</span>
                 </div>
                 <div>
                     <span id="authorLabel">编者</span>: 荆炎荣
@@ -110,7 +110,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             
             let currentLang = 'zh';
-            const version = '1.4.0'; 
+            const version = '1.5.0'; 
 
             // --- 1. 翻译文本 ---
             const translations = {
@@ -142,7 +142,7 @@
 
             // --- 2. 单位定义 (支持中英文) ---
             const units = {
-                // === 新增/修改：RO水/水质 ===
+                // === RO水/水质 ===
                 water_quality: {
                     name: { zh: '水质 (电导/电阻/TDS)', en: 'Water Quality (Cond/Res/TDS)' },
                     // 特殊逻辑：不使用 standard factor，而是自定义函数处理倒数关系
@@ -150,7 +150,7 @@
                         'us_cm': { name: { zh: '微西门子/cm (μS/cm)', en: 'Microsiemens/cm (μS/cm)' }, type: 'cond', factor: 1 },
                         'ms_cm': { name: { zh: '毫西门子/cm (mS/cm)', en: 'Millisiemens/cm (mS/cm)' }, type: 'cond', factor: 1000 },
                         's_m': { name: { zh: '西门子/米 (S/m)', en: 'Siemens/meter (S/m)' }, type: 'cond', factor: 10000 },
-                        'tds_ppm': { name: { zh: 'TDS (ppm, 估算值)', en: 'TDS (ppm, approx)' }, type: 'cond', factor: 0.5 }, // 假设 0.5 转换系数 (1 μS/cm = 0.5 ppm)
+                        'tds_ppm': { name: { zh: 'TDS (ppm, 估算值)', en: 'TDS (ppm, approx)' }, type: 'cond', factor: 0.5 }, // 假设 0.5 转换系数
                         'meg_ohm': { name: { zh: '兆欧·厘米 (MΩ·cm)', en: 'Megaohm-cm (MΩ·cm)' }, type: 'res', factor: 1 }, // 基准电阻率单位
                         'k_ohm': { name: { zh: '千欧·厘米 (kΩ·cm)', en: 'Kiloohm-cm (kΩ·cm)' }, type: 'res', factor: 0.001 },
                         'ohm_cm': { name: { zh: '欧姆·厘米 (Ω·cm)', en: 'Ohm-cm (Ω·cm)' }, type: 'res', factor: 0.000001 }
@@ -296,6 +296,17 @@
                         'knot': { name: { zh: '节 (knot)', en: 'Knot (knot)' }, factor: 1852 / 3600 },
                     }
                 },
+                // === 新增：转速 ===
+                rotational_speed: {
+                    name: { zh: '转速/角速度', en: 'Rotational Speed' },
+                    baseUnit: 'rpm',
+                    list: {
+                        'rpm': { name: { zh: '转/分钟 (RPM)', en: 'Revolutions/minute (RPM)' }, factor: 1 },
+                        'r_s': { name: { zh: '转/秒 (r/s, Hz)', en: 'Revolutions/second (r/s, Hz)' }, factor: 60 },
+                        'rad_s': { name: { zh: '弧度/秒 (rad/s)', en: 'Radians/second (rad/s)' }, factor: 9.54929658 },
+                        'deg_s': { name: { zh: '度/秒 (°/s)', en: 'Degrees/second (°/s)' }, factor: 0.16666667 },
+                    }
+                },
                 acceleration: {
                     name: { zh: '加速度', en: 'Acceleration' },
                     baseUnit: 'm/s2',
@@ -403,11 +414,11 @@
              */
             function populateCategories() {
                 categorySelect.innerHTML = '';
-                // 排序顺序，把水质和制冷放在前面
+                // 排序顺序
                 const categoryOrder = [
                     'water_quality', 'pressure', 'power', 'energy', 'volumetric_flow', 'mass_flow', 
                     'density', 'specific_heat', 'thermal_conductivity', 'dynamic_viscosity', 'kinematic_viscosity', 
-                    'speed', 'acceleration', 
+                    'speed', 'rotational_speed', 'acceleration', 
                     'temperature', 'length', 'mass', 'area', 'volume',
                     'constants' 
                 ];
@@ -555,7 +566,7 @@
                 else if (categoryKey === 'water_quality') {
                     result = convertWaterQuality(value, fromUnitKey, toUnitKey);
                 }
-                // === 3. 标准线性换算 ===
+                // === 3. 标准线性换算 (包括新加的转速) ===
                 else {
                     const category = units[categoryKey];
                     const fromFactor = category.list[fromUnitKey].factor;
@@ -570,12 +581,10 @@
 
             /**
              * 水质换算逻辑
-             * 基础逻辑：统一转为 μS/cm (cond) 进行中间计算
-             * 电阻率 (Res) = 1,000,000 / 电导率 (Cond, μS/cm)
              */
             function convertWaterQuality(value, fromKey, toKey) {
                 if (value === 0 && units.water_quality.list[fromKey].type === 'res') {
-                    return 0; // 避免除以零，虽然物理上0电阻率意味着无限电导率
+                    return 0; // 避免除以零
                 }
 
                 const list = units.water_quality.list;
@@ -586,15 +595,8 @@
 
                 // Step 1: 转为 μS/cm
                 if (fromData.type === 'cond') {
-                    // 线性转换: Value * Factor
-                    // 比如: mS/cm (factor 1000) -> 2 * 1000 = 2000 μS/cm
                     valInMicroSiemens = value * fromData.factor;
                 } else {
-                    // 倒数转换: Value 是电阻率
-                    // MΩ·cm (factor 1). 18.2 MΩ·cm -> 1,000,000 / (18.2 * 1) = 54945... wait.
-                    // 公式: μS/cm = 1,000,000 / (MΩ·cm)
-                    // 如果单位是 kΩ·cm (factor 0.001 MΩ). 
-                    // 简单化：先转成 MΩ·cm
                     const valInMegaOhm = value * fromData.factor; 
                     if (valInMegaOhm === 0) return 0;
                     valInMicroSiemens = 1 / valInMegaOhm;
@@ -602,11 +604,9 @@
 
                 // Step 2: 从 μS/cm 转为 目标单位
                 if (toData.type === 'cond') {
-                    // 线性转换回去
                     return valInMicroSiemens / toData.factor;
                 } else {
-                    // 转为电阻率
-                    if (valInMicroSiemens === 0) return 0; // 防止无穷大
+                    if (valInMicroSiemens === 0) return 0; 
                     const resInMegaOhm = 1 / valInMicroSiemens;
                     return resInMegaOhm / toData.factor;
                 }
