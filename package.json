@@ -12,7 +12,7 @@
     "step": "bash deploy-step.sh",
     "step1": "git pull origin main",
     "step2": "git add .",
-    "step3": "echo '提示: 如果没有更改，此步骤会跳过。' && git status && echo '' && read -p '请输入提交信息: ' msg && git commit -m \"$msg\" || echo '没有更改需要提交'",
+    "step3": "git status && echo '' && echo '提示: 请手动执行 git commit -m \"你的提交信息\"'",
     "step4": "git push origin main",
     "step5": "npm run deploy"
   },
