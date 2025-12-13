@@ -1,0 +1,22 @@
+{
+  "name": "engineering-unit-converter",
+  "version": "1.5.0",
+  "type": "module",
+  "description": "工程单位换算器 - Engineering Unit Converter",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "unit-converter",
+    "engineering",
+    "vite"
+  ],
+  "author": "荆炎荣",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
+
