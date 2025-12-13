@@ -8,7 +8,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
-    "upload": "bash deploy.sh"
+    "upload": "bash deploy.sh",
+    "step": "bash deploy-step.sh",
+    "step1": "git pull origin main",
+    "step2": "git add .",
+    "step3": "git commit",
+    "step4": "git push origin main",
+    "step5": "npm run deploy"
   },
   "keywords": [
     "unit-converter",
